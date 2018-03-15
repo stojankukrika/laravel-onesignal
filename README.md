@@ -13,7 +13,7 @@ Before you start installing this service, please complete your OneSignal setup a
 First, you'll need to require the package with Composer:
 
 ```sh
-composer require berkayk/onesignal-laravel
+composer require stojankukrika/onesignal-laravel
 ```
 
 Aftwards, run `composer update` from your command line.
@@ -23,7 +23,7 @@ Then, update `config/app.php` by adding an entry for the service provider.
 ```php
 'providers' => [
 	// ...
-	Berkayk\OneSignal\OneSignalServiceProvider::class
+	stojankukrika\OneSignal\OneSignalServiceProvider::class
 ];
 ```
 
@@ -33,7 +33,7 @@ Then, register class alias by adding an entry in aliases section
 ```php
 'aliases' => [
 	// ...
-	'OneSignal' => Berkayk\OneSignal\OneSignalFacade::class
+	'OneSignal' => stojankukrika\OneSignal\OneSignalFacade::class
 ];
 ```
 

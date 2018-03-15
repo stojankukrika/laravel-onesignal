@@ -53,7 +53,7 @@ This will publish a configuration file named `onesignal.php` which includes your
 ## Configuration
 
 You need to fill in `onesignal.php` file that is found in your applications `config` directory.
-`app_id` is your *OneSignal App ID* and `rest_api_key` is your *REST API Key*. If you want you can set icon color you can set *icon_color*.
+`app_id` is your *OneSignal App ID* and `rest_api_key` is your *REST API Key*. If you want you can set icon color you can set `icon_color`.
 
 ## Usage
 

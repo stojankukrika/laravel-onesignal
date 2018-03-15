@@ -1,5 +1,7 @@
 #  OneSignal Push Notifications for Laravel 5
 
+[Thanks to berkayk's for start package](https://github.com/berkayk/laravel-onesignal)
+
 ## Introduction
 
 This is a simple OneSignal wrapper library for Laravel. It simplifies the basic notification flow with the defined methods. You can send a message to all users or you can notify a single user. 
@@ -51,7 +53,7 @@ This will publish a configuration file named `onesignal.php` which includes your
 ## Configuration
 
 You need to fill in `onesignal.php` file that is found in your applications `config` directory.
-`app_id` is your *OneSignal App ID* and `rest_api_key` is your *REST API Key*.
+`app_id` is your *OneSignal App ID* and `rest_api_key` is your *REST API Key*. If you want you can set icon color you can set *icon_color*.
 
 ## Usage
 

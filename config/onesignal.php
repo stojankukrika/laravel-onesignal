@@ -19,5 +19,14 @@ return array(
 	|
 	*/
     'rest_api_key' => 'YOUR-REST-API-KEY-HERE',
-    'user_auth_key' => 'YOUR-USER-AUTH-KEY'
+
+    /*
+	|--------------------------------------------------------------------------
+	| If you want to be icon have custom color
+	|--------------------------------------------------------------------------
+	|
+    |
+	|
+	*/
+    'icon_color' => 'YOUR-ICON-COLOR'
 );

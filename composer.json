@@ -1,6 +1,6 @@
 {
-  "name": "berkayk/onesignal-laravel",
-  "description": "OneSignal Push Wrapper Laravel",
+  "name": "stojankukrika/onesignal-laravel",
+  "description": "OneSignal Push Wrapper Laravel with addition icon color",
   "keywords": ["onesignal", "webpush", "push", "laravel", "laravel 5"],
   "type": "library",
   "require": {
@@ -14,11 +14,16 @@
   },
   "autoload": {
     "psr-4": {
-      "Berkayk\\OneSignal\\": "src/"
+      "stojankukrika\\OneSignal\\": "src/"
     }
   },
   "license": "MIT",
   "authors": [
+    {
+      "name": "Stojan Kukrika",
+      "email": "stojankukrika@gmail.com",
+      "homepage": "http://naturedev.com"
+    },
     {
       "name": "Berkay Kaya",
       "email": "berkayk@gmail.com",

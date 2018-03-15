@@ -1,6 +1,6 @@
 <?php
 
-namespace Berkayk\OneSignal;
+namespace stojankukrika\OneSignal;
 
 use GuzzleHttp\Client;
 
@@ -15,7 +15,7 @@ class OneSignalClient
     protected $headers;
     protected $appId;
     protected $restApiKey;
-    protected $userAuthKey;
+    protected $iconColor;
     protected $additionalParams;
 
     /**
@@ -51,11 +51,11 @@ class OneSignalClient
         return $this;
     }
 
-    public function __construct($appId, $restApiKey, $userAuthKey)
+    public function __construct($appId, $restApiKey, $iconColor="")
     {
         $this->appId = $appId;
         $this->restApiKey = $restApiKey;
-        $this->userAuthKey = $userAuthKey;
+        $this->iconColor = $iconColor;
 
         $this->client = new Client();
         $this->headers = ['headers' => []];
@@ -96,6 +96,8 @@ class OneSignalClient
         $params = array(
             'app_id' => $this->appId,
             'contents' => $contents,
+            'android_led_color' => $this->iconColor,
+            'android_accent_color' => $this->iconColor,
             'include_player_ids' => array($userId)
         );
 
@@ -126,6 +128,8 @@ class OneSignalClient
         $params = array(
             'app_id' => $this->appId,
             'contents' => $contents,
+            'android_led_color' => $this->iconColor,
+            'android_accent_color' => $this->iconColor,
             'tags' => $tags,
         );
 
@@ -156,6 +160,8 @@ class OneSignalClient
         $params = array(
             'app_id' => $this->appId,
             'contents' => $contents,
+            'android_led_color' => $this->iconColor,
+            'android_accent_color' => $this->iconColor,
             'included_segments' => array('All')
         );
 
@@ -186,6 +192,8 @@ class OneSignalClient
         $params = array(
             'app_id' => $this->appId,
             'contents' => $contents,
+            'android_led_color' => $this->iconColor,
+            'android_accent_color' => $this->iconColor,
             'included_segments' => [$segment]
         );
 

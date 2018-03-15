@@ -1,6 +1,6 @@
 <?php
 
-namespace Berkayk\OneSignal;
+namespace stojankukrika\OneSignal;
 
 use Illuminate\Support\Facades\Facade;
 

@@ -98,10 +98,39 @@ You can send a custom message with
     OneSignal::sendNotificationCustom($parameters);
     
     ### Sending a Custom Notification
+    
 ### Sending a async Custom Notification
 You can send a async custom message with 
 
     OneSignal::async()->sendNotificationCustom($parameters);
     
 Please refer to https://documentation.onesignal.com/reference for all customizable parameters.
+
+### Create Player(add user into onesignal)
+You can send request with 
+
+    OneSignal::createPlayer($parameters);
+    
+Please refer to https://documentation.onesignal.com/reference#add-a-device for all customizable parameters.
+
+### Edit Player(edit user in onesignal)
+You can send request editPlayer (add in array $parameters value with 'id' params)
+
+    OneSignal::editPlayer($parameters);
+    
+Please refer to https://documentation.onesignal.com/reference#edit-device for all customizable parameters.
+
+### View device
+You can send request with 
+
+    OneSignal::getPlayer($device_id);
+    
+Please refer to https://documentation.onesignal.com/reference#view-device for all customizable parameters.
+
+### Get all Players(users from onesignal)
+You can send request with 
+
+    OneSignal::getAllPlayers($limit, $offset);
+    
+Please refer to https://documentation.onesignal.com/reference#view-devices for all customizable parameters.
 

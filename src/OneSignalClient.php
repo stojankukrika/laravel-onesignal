@@ -273,6 +273,35 @@ class OneSignalClient
     }
 
     /**
+     * Get list of all users/players
+     *
+     * @param int $limit
+     * @param int $offset
+     * @return mixed
+     */
+    public function getAllPlayers($limit=300, $offset=0) {
+        $params = array(
+            'app_id' => $this->appId,
+            'limit' => $limit,
+            'offset' => $offset
+        );
+        return $this->sendPlayer($params, 'GET', self::ENDPOINT_PLAYERS . '?' . http_build_query($params));
+    }
+
+    /**
+     * Get list of all users/players
+     *
+     * @param string $id
+     * @return mixed
+     */
+    public function getPlayer($id) {
+        $params = array(
+            'app_id' => $this->appId,
+        );
+        return $this->sendPlayer($params, 'GET', self::ENDPOINT_PLAYERS . '/'.$id.'?' . http_build_query($params));
+    }
+
+    /**
      * Create or update a by $method value
      *
      * @param array $parameters
@@ -285,11 +314,15 @@ class OneSignalClient
         $this->requiresAuth();
         $this->usesJSON();
 
-        $parameters['app_id'] = $this->appId;
-        $this->headers['body'] = json_encode($parameters);
-
         $method = strtolower($method);
-        return $this->{$method}($endpoint);
+
+        if ($method=='get') {
+            $this->headers['headers']['Authorization'] = 'Basic '.$this->restApiKey;
+            return $this->{$method}($endpoint,$this->headers);
+        }else{
+            $this->headers['body'] = json_encode($parameters);
+            return $this->{$method}($endpoint);
+        }
     }
 
     public function post($endPoint) {
@@ -306,5 +339,12 @@ class OneSignalClient
             return (is_callable($this->requestCallback) ? $promise->then($this->requestCallback) : $promise);
         }
         return $this->client->put(self::API_URL . $endPoint, $this->headers);
+    }
+
+    public function get($endPoint, $headers) {
+        $client = new Client([
+            'defaults' => $headers
+        ]);
+        return $client->get(self::API_URL . $endPoint, $headers);
     }
 }

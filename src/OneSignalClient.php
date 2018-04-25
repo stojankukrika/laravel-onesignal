@@ -3,6 +3,14 @@
 namespace stojankukrika\OneSignal;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Handler\CurlHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request as Psr7Request;
+use GuzzleHttp\Psr7\Response as Psr7Response;
+
 
 class OneSignalClient
 {
@@ -22,6 +30,16 @@ class OneSignalClient
      * @var bool
      */
     public $requestAsync = false;
+
+    /**
+     * @var int
+     */
+    public $maxRetries = 2;
+
+    /**
+     * @var int
+     */
+    public $retryDelay = 500;
 
     /**
      * @var Callable
@@ -57,9 +75,29 @@ class OneSignalClient
         $this->restApiKey = $restApiKey;
         $this->iconColor = $iconColor;
 
-        $this->client = new Client();
+        $this->client = new Client([
+            'handler' => $this->createGuzzleHandler(),
+        ]);
         $this->headers = ['headers' => []];
         $this->additionalParams = [];
+    }
+
+
+    private function createGuzzleHandler() {
+        return tap(HandlerStack::create(new CurlHandler()), function (HandlerStack $handlerStack) {
+            $handlerStack->push(Middleware::retry(function ($retries, Psr7Request $request, Psr7Response $response = null, RequestException $exception = null) {
+                if ($retries >= $this->maxRetries) {
+                    return false;
+                }
+                if ($exception instanceof ConnectException) {
+                    return true;
+                }
+                if ($response && $response->getStatusCode() >= 500) {
+                    return true;
+                }
+                return false;
+            }), $this->retryDelay);
+        });
     }
 
     public function testCredentials() {
@@ -88,7 +126,7 @@ class OneSignalClient
         return $this;
     }
 
-    public function sendNotificationToUser($message, $userId, $url = null, $data = null, $buttons = null, $schedule = null) {
+    public function sendNotificationToUser($message, $userId, $url = null, $data = null, $buttons = null, $schedule = null, $headings = null, $subtitle = null) {
         $contents = array(
             "en" => $message
         );
@@ -98,7 +136,7 @@ class OneSignalClient
             'contents' => $contents,
             'android_led_color' => $this->iconColor,
             'android_accent_color' => $this->iconColor,
-            'include_player_ids' => array($userId)
+            'include_player_ids' => is_array($userId) ? $userId : array($userId)
         );
 
         if (isset($url)) {
@@ -117,10 +155,22 @@ class OneSignalClient
             $params['send_after'] = $schedule;
         }
 
+        if(isset($headings)){
+            $params['headings'] = array(
+                "en" => $headings
+            );
+        }
+
+        if(isset($subtitle)){
+            $params['subtitle'] = array(
+                "en" => $subtitle
+            );
+        }
+
         $this->sendNotificationCustom($params);
     }
 
-    public function sendNotificationUsingTags($message, $tags, $url = null, $data = null, $buttons = null, $schedule = null) {
+    public function sendNotificationUsingTags($message, $tags, $url = null, $data = null, $buttons = null, $schedule = null, $headings = null, $subtitle = null) {
         $contents = array(
             "en" => $message
         );
@@ -130,7 +180,7 @@ class OneSignalClient
             'contents' => $contents,
             'android_led_color' => $this->iconColor,
             'android_accent_color' => $this->iconColor,
-            'tags' => $tags,
+            'filters' => $tags,
         );
 
         if (isset($url)) {
@@ -149,10 +199,22 @@ class OneSignalClient
             $params['send_after'] = $schedule;
         }
 
+        if(isset($headings)){
+            $params['headings'] = array(
+                "en" => $headings
+            );
+        }
+
+        if(isset($subtitle)){
+            $params['subtitle'] = array(
+                "en" => $subtitle
+            );
+        }
+
         $this->sendNotificationCustom($params);
     }
 
-    public function sendNotificationToAll($message, $url = null, $data = null, $buttons = null, $schedule = null) {
+    public function sendNotificationToAll($message, $url = null, $data = null, $buttons = null, $schedule = null, $headings = null, $subtitle = null) {
         $contents = array(
             "en" => $message
         );
@@ -181,10 +243,21 @@ class OneSignalClient
             $params['send_after'] = $schedule;
         }
 
+        if(isset($headings)){
+            $params['headings'] = array(
+                "en" => $headings
+            );
+        }
+
+        if(isset($subtitle)){
+            $params['subtitle'] = array(
+                "en" => $subtitle
+            );
+        }
         $this->sendNotificationCustom($params);
     }
 
-    public function sendNotificationToSegment($message, $segment, $url = null, $data = null, $buttons = null, $schedule = null) {
+    public function sendNotificationToSegment($message, $segment, $url = null, $data = null, $buttons = null, $schedule = null, $headings = null, $subtitle = null) {
         $contents = array(
             "en" => $message
         );
@@ -211,6 +284,18 @@ class OneSignalClient
 
         if(isset($schedule)){
             $params['send_after'] = $schedule;
+        }
+
+        if(isset($headings)){
+            $params['headings'] = array(
+                "en" => $headings
+            );
+        }
+
+        if(isset($subtitle)){
+            $params['subtitle'] = array(
+                "en" => $subtitle
+            );
         }
 
         $this->sendNotificationCustom($params);
@@ -246,6 +331,16 @@ class OneSignalClient
         $this->headers['buttons'] = json_encode($parameters);
         $this->headers['verify'] = false;
         return $this->post(self::ENDPOINT_NOTIFICATIONS);
+    }
+
+    public function getNotification($notification_id, $app_id = null)
+    {
+        $this->requiresAuth();
+        $this->usesJSON();
+        if (!$app_id) {
+            $app_id = $this->appId;
+        }
+        return $this->get(self::ENDPOINT_NOTIFICATIONS . '/' . $notification_id . '?app_id=' . $app_id);
     }
 
     /**
@@ -318,7 +413,7 @@ class OneSignalClient
 
         if ($method=='get') {
             $this->headers['headers']['Authorization'] = 'Basic '.$this->restApiKey;
-            return $this->{$method}($endpoint,$this->headers);
+            return $this->{$method}($endpoint);
         }else{
             $this->headers['body'] = json_encode($parameters);
             return $this->{$method}($endpoint);
@@ -341,10 +436,7 @@ class OneSignalClient
         return $this->client->put(self::API_URL . $endPoint, $this->headers);
     }
 
-    public function get($endPoint, $headers) {
-        $client = new Client([
-            'defaults' => $headers
-        ]);
-        return $client->get(self::API_URL . $endPoint, $headers);
+    public function get($endPoint) {
+        return $this->client->get(self::API_URL . $endPoint, $this->headers);
     }
 }

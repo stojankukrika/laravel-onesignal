@@ -11,19 +11,20 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request as Psr7Request;
 use GuzzleHttp\Psr7\Response as Psr7Response;
 
-
 class OneSignalClient
 {
     const API_URL = "https://onesignal.com/api/v1";
 
     const ENDPOINT_NOTIFICATIONS = "/notifications";
     const ENDPOINT_PLAYERS = "/players";
+    const ENDPOINT_APPS = "/apps";
 
     protected $client;
     protected $headers;
     protected $appId;
     protected $restApiKey;
     protected $iconColor;
+    protected $userAuthKey;
     protected $additionalParams;
 
     /**
@@ -69,11 +70,12 @@ class OneSignalClient
         return $this;
     }
 
-    public function __construct($appId, $restApiKey, $iconColor="")
+    public function __construct($appId, $restApiKey, $userAuthKey, $iconColor="")
     {
         $this->appId = $appId;
         $this->restApiKey = $restApiKey;
         $this->iconColor = $iconColor;
+        $this->userAuthKey = $userAuthKey;
 
         $this->client = new Client([
             'handler' => $this->createGuzzleHandler(),
@@ -81,7 +83,6 @@ class OneSignalClient
         $this->headers = ['headers' => []];
         $this->additionalParams = [];
     }
-
 
     private function createGuzzleHandler() {
         return tap(HandlerStack::create(new CurlHandler()), function (HandlerStack $handlerStack) {
@@ -106,6 +107,10 @@ class OneSignalClient
 
     private function requiresAuth() {
         $this->headers['headers']['Authorization'] = 'Basic '.$this->restApiKey;
+    }
+
+    private function requiresUserAuth() {
+        $this->headers['headers']['Authorization'] = 'Basic '.$this->userAuthKey;
     }
 
     private function usesJSON() {
@@ -137,6 +142,58 @@ class OneSignalClient
             'android_led_color' => $this->iconColor,
             'android_accent_color' => $this->iconColor,
             'include_player_ids' => is_array($userId) ? $userId : array($userId)
+        );
+
+        if (isset($url)) {
+            $params['url'] = $url;
+        }
+
+        if (isset($data)) {
+            $params['data'] = $data;
+        }
+
+        if (isset($buttons)) {
+            $params['buttons'] = $buttons;
+        }
+
+        if(isset($schedule)){
+            $params['send_after'] = $schedule;
+        }
+
+        if(isset($headings)){
+            $params['headings'] = array(
+                "en" => $headings
+            );
+        }
+
+        if(isset($subtitle)){
+            $params['subtitle'] = array(
+                "en" => $subtitle
+            );
+        }
+
+        $this->sendNotificationCustom($params);
+    }
+
+    /**
+     * @param $message
+     * @param $userId
+     * @param null $url
+     * @param null $data
+     * @param null $buttons
+     * @param null $schedule
+     * @param null $headings
+     * @param null $subtitle
+     */
+    public function sendNotificationToExternalUser($message, $userId, $url = null, $data = null, $buttons = null, $schedule = null, $headings = null, $subtitle = null) {
+        $contents = array(
+            "en" => $message
+        );
+
+        $params = array(
+            'app_id' => $this->appId,
+            'contents' => $contents,
+            'include_external_user_ids' => is_array($userId) ? $userId : array($userId)
         );
 
         if (isset($url)) {
@@ -301,6 +358,16 @@ class OneSignalClient
         $this->sendNotificationCustom($params);
     }
 
+    public function deleteNotification($notificationId, $appId = null) {
+        $this->requiresAuth();
+
+        if(!$appId)
+            $appId = $this->appId;
+        $notificationCancelNode = "/$notificationId?app_id=$this->appId";
+        return $this->delete(self::ENDPOINT_NOTIFICATIONS . $notificationCancelNode);
+
+    }
+
     /**
      * Send a notification with custom parameters defined in
      * https://documentation.onesignal.com/reference#section-example-code-create-notification
@@ -343,6 +410,46 @@ class OneSignalClient
         return $this->get(self::ENDPOINT_NOTIFICATIONS . '/' . $notification_id . '?app_id=' . $app_id);
     }
 
+    public function getNotifications($app_id = null, $limit = null, $offset = null) {
+        $this->requiresAuth();
+        $this->usesJSON();
+
+        $endpoint = self::ENDPOINT_NOTIFICATIONS;
+
+        if(!$app_id) {
+            $app_id = $this->appId;
+        }
+
+        $endpoint.='?app_id='.$app_id;
+
+        if($limit) {
+            $endpoint.="&limit=".$limit;
+        }
+
+        if($offset) {
+            $endpoint.="&offset=".$$offset;
+        }
+
+        return $this->get($endpoint);
+    }
+
+    public function getApp($app_id = null) {
+        $this->requiresUserAuth();
+        $this->usesJSON();
+
+        if(!$app_id)
+            $app_id = $this->appId;
+
+        return $this->get(self::ENDPOINT_APPS . '/'.$app_id);
+    }
+
+    public function getApps() {
+        $this->requiresUserAuth();
+        $this->usesJSON();
+
+        return $this->get(self::ENDPOINT_APPS);
+    }
+
     /**
      * Creates a user/player
      *
@@ -367,33 +474,14 @@ class OneSignalClient
         return $this->sendPlayer($parameters, 'PUT', self::ENDPOINT_PLAYERS . '/' . $parameters['id']);
     }
 
-    /**
-     * Get list of all users/players
-     *
-     * @param int $limit
-     * @param int $offset
-     * @return mixed
-     */
-    public function getAllPlayers($limit=300, $offset=0) {
-        $params = array(
-            'app_id' => $this->appId,
-            'limit' => $limit,
-            'offset' => $offset
-        );
-        return $this->sendPlayer($params, 'GET', self::ENDPOINT_PLAYERS . '?' . http_build_query($params));
-    }
+    public function requestPlayersCSV($app_id = null, Array $parameters = null) {
+        $this->requiresAuth();
+        $this->usesJSON();
 
-    /**
-     * Get list of all users/players
-     *
-     * @param string $id
-     * @return mixed
-     */
-    public function getPlayer($id) {
-        $params = array(
-            'app_id' => $this->appId,
-        );
-        return $this->sendPlayer($params, 'GET', self::ENDPOINT_PLAYERS . '/'.$id.'?' . http_build_query($params));
+        $endpoint = self::ENDPOINT_PLAYERS."/csv_export?";
+        $endpoint .= "app_id" . $app_id?$app_id:$this->appId;
+
+        return $this->sendPlayer($parameters, 'POST', $endpoint);
     }
 
     /**
@@ -411,6 +499,7 @@ class OneSignalClient
 
         $method = strtolower($method);
 
+        $parameters['app_id'] = $this->appId;
         if ($method=='get') {
             $this->headers['headers']['Authorization'] = 'Basic '.$this->restApiKey;
             return $this->{$method}($endpoint);
@@ -438,5 +527,13 @@ class OneSignalClient
 
     public function get($endPoint) {
         return $this->client->get(self::API_URL . $endPoint, $this->headers);
+    }
+
+    public function delete($endPoint) {
+        if($this->requestAsync === true) {
+            $promise = $this->client->deleteAsync(self::API_URL . $endPoint, $this->headers);
+            return (is_callable($this->requestCallback) ? $promise->then($this->requestCallback) : $promise);
+        }
+        return $this->client->delete(self::API_URL . $endPoint, $this->headers);
     }
 }

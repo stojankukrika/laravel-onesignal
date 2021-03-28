@@ -8,6 +8,7 @@ $dotenv->load();
 $client = new stojankukrika\OneSignal\OneSignalClient(
     getenv('APP_ID'),
     getenv('REST_API_KEY'),
+    getenv('USER_AUTH_KEY'),
     getenv('ICON-COLOR'));
 
 echo $client->testCredentials();

@@ -18,7 +18,7 @@ class OneSignalServiceProvider extends ServiceProvider
         $this->publishes([$configPath => config_path('onesignal.php')], 'config');
         $this->mergeConfigFrom($configPath, 'onesignal');
 
-        if ( class_exists('Laravel\Lumen\Application') ) {
+        if ($this->app instanceof Laravel\Lumen\Application) {
             $this->app->configure('onesignal');
         }
     }
@@ -36,15 +36,15 @@ class OneSignalServiceProvider extends ServiceProvider
                 $config = $app['config']['onesignal'] ?: $app['config']['onesignal::config'];
             }
 
-            $client = new OneSignalClient($config['app_id'], $config['rest_api_key'], $config['icon_color']);
+            $client = new OneSignalClient($config['app_id'], $config['rest_api_key'], $config['user_auth_key'], $config['icon_color']);
 
             return $client;
         });
+
+        $this->app->alias('onesignal', 'stojankukrika\OneSignal\OneSignalClient');
     }
 
     public function provides() {
         return ['onesignal'];
     }
-
-
 }
